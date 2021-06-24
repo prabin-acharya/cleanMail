@@ -41,6 +41,7 @@ function send_email(event){
 function compose_email() {
   // Show compose view and hide other views
   document.querySelector('#emails-view').style.display = 'none';
+  document.querySelector('#email-view').style.display = 'none';
   document.querySelector('#compose-view').style.display = 'block';
   // Clear out composition fields
   document.querySelector('#compose-recipients').value = '';
@@ -118,7 +119,7 @@ function read_email(email_id){
   fetch(`emails/${email_id}`)
   .then((response)=>response.json())
   .then((email)=>{
-    build_email(email);
+    build_email(email, email_id);
   })
   .catch(error => console.log(error));
   /*fetch(`/emails/${email_id}`, {
@@ -130,13 +131,14 @@ function read_email(email_id){
 }
 
 
-function build_email(email){
+function build_email(email, email_id){
   const from = document.createElement('div')
   const to = document.createElement('div')
   const subject = document.createElement('div')
   const timestamp = document.createElement('div')
   const body = document.createElement('div')
   const reply_button = document.createElement('div')
+  const markasread_button = document.createElement('div')
 
   from.innerHTML = `<strong> From : </strong> ${email.sender}`;
   to.innerHTML = `<strong> To : </strong> ${email.recipients}`;
@@ -148,13 +150,37 @@ function build_email(email){
   reply_button.classList = "btn btn-outline-primary m-2";
   reply_button.addEventListener("click", () => compose_reply(email));
 
+  markasread_button.innerHTML = 'Mark as Read';
+  markasread_button.classList = "btn btn-outline-primary m-2";
+  markasread_button.addEventListener("click", () => {
+    fetch(`/emails/${email_id}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        read: true
+      })
+    });
+  })
+
   document.querySelector("#email-view").appendChild(from);
   document.querySelector("#email-view").appendChild(to);
   document.querySelector("#email-view").appendChild(subject);
   document.querySelector("#email-view").appendChild(timestamp);
   document.querySelector("#email-view").appendChild(reply_button);
+  document.querySelector("#email-view").appendChild(markasread_button);
   document.querySelector("#email-view").appendChild(document.createElement("hr"));
   document.querySelector("#email-view").appendChild(body);
+}
+
+
+function compose_reply(email){
+  document.querySelector('#emails-view').style.display = 'none';
+  document.querySelector('#email-view').style.display = 'none';
+  document.querySelector('#compose-view').style.display = 'block';
+  document.querySelector('#compose-view').querySelector('h3').innerHTML = "Reply mail";
+  // Clear out composition fields
+  document.querySelector('#compose-recipients').value = `${email.sender}`;
+  document.querySelector('#compose-subject').value = ((email["subject"].match(/^(Re:)\s/)) ? email["subject"] : "Re: " + email["subject"]);
+  document.querySelector('#compose-body').value = `On ${email.timestamp}  ${email.sender} wrote: \n${email.body}\n---------------------------------------------\n`;
 }
 
 }

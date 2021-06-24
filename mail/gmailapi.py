@@ -14,6 +14,7 @@ from .models import Email
 import base64
 import email
 import json
+from datetime import datetime
 
 
 # If modifying these scopes, delete the file token.json.
@@ -60,44 +61,13 @@ def readMessage(content)->str:
         print("body has no data.")
     return message
 
-def Prabin():
+def get_inbox_gmails():
     # Call the Gmail API
     results = service.users().messages().list(userId='me',labelIds=["INBOX"],q="is:unread category:primary").execute()
     messages = results.get('messages', [])
 
     for message in messages:#[:message_count]
-        mail = service.users().messages().get(userId='me', id=message['id'], format="full").execute()
-        headers=mail["payload"]["headers"]
-
-        user = service.users().getProfile(userId='me').execute()['emailAddress']
-        #user2 = [i["value"] for i in user if i["name"]=="emailAddress"]
-
-        sender = [i["value"] for i in headers if i["name"]=="From"]
-        sender = json.dumps(sender[0])
-
-        recipients = [i["value"] for i in headers if i["name"]=="To"]
-        recipients = json.dumps(recipients[0])
-
-        subject = [i["value"] for i in headers if i["name"]=="Subject"]#From
-        subject = json.dumps(subject[0])
-
-        body = readMessage(mail)
-
-        date = [i["value"] for i in headers if i["name"]=="Date"]
-        date = json.dumps(date[0])
-
-        #service.users().messages().modify(userId='me', id=message['id'], body={'removeLabelIds':['UNREAD']}).execute()
-
-        mail2 = Email(
-            user = user,
-            sender=sender,
-            recipients=user,
-            subject=subject,
-            body=body,
-            timestamp=date
-            )
-        mail2.save()
-
+        save_mail(message)
 
 def send_gmail(recipient, subject, body):
     mail_from = service.users().getProfile(userId='me').execute()['emailAddress']
@@ -120,41 +90,59 @@ def send_gmail(recipient, subject, body):
         print("An error occured.Mail not sent.")
 
 
-def sent_gmails():
+def get_sent_gmails():
     results = service.users().messages().list(userId='me',labelIds=["SENT"]).execute()
     messages = results.get('messages', [])
 
     for message in messages[:5]:
-        
-        mail = service.users().messages().get(userId='me', id=message['id'], format="full").execute()
-        headers=mail["payload"]["headers"]
+        save_mail(message)
 
-        user = service.users().getProfile(userId='me').execute()['emailAddress']
-        #user2 = [i["value"] for i in user if i["name"]=="emailAddress"]
+def save_mail(message):
+    mail = service.users().messages().get(userId='me', id=message['id'], format="full").execute()
+    headers=mail["payload"]["headers"]
 
-        #sender = [i["value"] for i in headers if i["name"]=="From"]
-        #sender = json.dumps(sender[0])
+    user = service.users().getProfile(userId='me').execute()['emailAddress']
 
-        recipients = [i["value"] for i in headers if i["name"]=="to"]
-        recipients = json.dumps(recipients[0])
+    gmail_id = message['id']
 
+    for i in headers:
+        if i["name"] == "From" or i["name"] == "from":
+            sender = i["value"]
+            #sender = json.dumps(sender[0])
+            #sender = sender.strip('\"')
 
-        subject = [i["value"] for i in headers if i["name"]=="subject"]#From
-        subject = json.dumps(subject[0])
+        elif i["name"] == "To" or i["name"] == "to":
+            recipients = i["value"]
+            #recipients = json.dumps(recipients[0])
+            #recipients = recipients.strip('\"')
 
-        body = readMessage(mail)
+        elif i["name"] == "Subject" or i["name"] == "subject":
+            subject = i["value"]
+            #subject = json.dumps(subject[0])
 
-        date = [i["value"] for i in headers if i["name"]=="Date"]
-        date = json.dumps(date[0])
+        elif i["name"] == "Date" or i["name"] == "date":
+            date = i["value"]
+            #Wed, 23 Jun 2021 20:18:44 +0000'  '%a, %d %b %Y %X %Z'
+            '''try:
+                date = datetime.strptime(date, '%a, %d %b %Y %X %z')
+            except ValueError:
+                try:
+                    date = datetime.strptime(date, '%a, %d %b %Y %X %Z')
+                except:
+                    date = date[:-5]
+                    date = datetime.strptime(date, '%a, %d %b %Y %X %z')
+            print(date)
+            #date = json.dumps(date[0])'''
 
-        #service.users().messages().modify(userId='me', id=message['id'], body={'removeLabelIds':['UNREAD']}).execute()
+    body = readMessage(mail)
 
-        mail2 = Email(
-            user = user,
-            sender=user,
-            recipients=recipients,
-            subject=subject,
-            body=body,
-            timestamp=date
-            )
-        mail2.save()
+    mail2 = Email(
+        user = user,
+        gmail_id = gmail_id,
+        sender = sender,
+        recipients = recipients,
+        subject = subject,
+        body = body,
+        timestamp = date
+        )
+    mail2.save()

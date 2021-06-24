@@ -9,17 +9,18 @@ from .models import Email
 from . import gmailapi
 
 user = gmailapi.service.users().getProfile(userId='me').execute()['emailAddress']
-
 # Create your views here.
 
 def index(request):
+    Email.objects.all().delete()
+    gmailapi.get_inbox_gmails()
+    gmailapi.get_sent_gmails()
     return render(request, "mail/inbox.html", {"user":user})
 
 @csrf_exempt
 def mailbox(request, mailbox):
-    Email.objects.all().delete()
-    gmailapi.Prabin()
-    gmailapi.sent_gmails()
+    
+    #  flag = "false"
     if mailbox == "inbox":
         emails = Email.objects.filter(recipients=user)
     elif mailbox == "sent":
@@ -42,6 +43,16 @@ def email(request, email_id):
     # Return email contents
     if request.method == "GET":
         return JsonResponse(email.serialize())
+
+    # Update whether email is read
+    elif request.method == "PUT":
+        data = json.loads(request.body)
+        if data.get("read") is not None:
+            email.read = data["read"]
+            gmail_id = email.gmail_id
+            gmailapi.service.users().messages().modify(userId='me', id=gmail_id, body={'removeLabelIds': ['UNREAD']}).execute()
+        email.save()
+        return HttpResponse(status=204)
 
     # Email must be via GET or PUT
     else:

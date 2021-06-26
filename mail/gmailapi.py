@@ -14,7 +14,8 @@ from .models import Email
 import base64
 import email
 import json
-from datetime import datetime
+import datetime
+import pytz
 
 
 # If modifying these scopes, delete the file token.json.
@@ -66,7 +67,7 @@ def get_inbox_gmails():
     results = service.users().messages().list(userId='me',labelIds=["INBOX"],q="is:unread category:primary").execute()
     messages = results.get('messages', [])
 
-    for message in messages:#[:message_count]
+    for message in messages:
         save_mail(message)
 
 def send_gmail(recipient, subject, body):
@@ -118,21 +119,23 @@ def save_mail(message):
 
         elif i["name"] == "Subject" or i["name"] == "subject":
             subject = i["value"]
+            print(subject)
             #subject = json.dumps(subject[0])
 
         elif i["name"] == "Date" or i["name"] == "date":
             date = i["value"]
-            #Wed, 23 Jun 2021 20:18:44 +0000'  '%a, %d %b %Y %X %Z'
-            '''try:
-                date = datetime.strptime(date, '%a, %d %b %Y %X %z')
+            try:
+                date = datetime.datetime.strptime(date, '%a, %d %b %Y %X %Z')
             except ValueError:
                 try:
-                    date = datetime.strptime(date, '%a, %d %b %Y %X %Z')
+                    date = datetime.datetime.strptime(date, '%a, %d %b %Y %X %z')
                 except:
-                    date = date[:-5]
-                    date = datetime.strptime(date, '%a, %d %b %Y %X %z')
-            print(date)
-            #date = json.dumps(date[0])'''
+                    try:
+                        date = datetime.datetime.strptime(date, '%a, %d %b %Y %X %z (%Z)')
+                    except:
+                        date = date[:-6].strip()
+                        print(date)
+                        date = datetime.datetime.strptime(date, '%a, %d %b %Y %X %z')
 
     body = readMessage(mail)
 

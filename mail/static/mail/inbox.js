@@ -66,7 +66,7 @@ function load_mailbox(mailbox) {
     emails.forEach(function(email){
     const parent_div = document.createElement('div') 
     build_emails(email, parent_div, mailbox)
-    parent_div.addEventListener('click', ()=>read_email(email.id))
+    parent_div.addEventListener('click', ()=>read_email(email.id, mailbox))
     document.querySelector('#emails-view').appendChild(parent_div);
   })
   })
@@ -77,7 +77,7 @@ function build_emails(email, parent_div, mailbox){
   const content = document.createElement("div")
   const recipients = document.createElement("strong")
   if(mailbox==='inbox'){
-    recipients.innerHTML = ` ${email.sender} : `
+    recipients.innerHTML = ` ${email.sender.split('<')[0]} : `
   }else {
     recipients.innerHTML = ` ${email.recipients} : `
   }
@@ -109,7 +109,7 @@ function build_emails(email, parent_div, mailbox){
 }
 
 
-function read_email(email_id){
+function read_email(email_id, mailbox){
   document.querySelector('#emails-view').style.display = 'none';
   document.querySelector('#email-view').style.display = 'block';
 
@@ -119,7 +119,7 @@ function read_email(email_id){
   fetch(`emails/${email_id}`)
   .then((response)=>response.json())
   .then((email)=>{
-    build_email(email, email_id);
+    build_email(email, email_id, mailbox);
   })
   .catch(error => console.log(error));
   /*fetch(`/emails/${email_id}`, {
@@ -131,7 +131,7 @@ function read_email(email_id){
 }
 
 
-function build_email(email, email_id){
+function build_email(email, email_id, mailbox){
   const from = document.createElement('div')
   const to = document.createElement('div')
   const subject = document.createElement('div')
@@ -140,7 +140,7 @@ function build_email(email, email_id){
   const reply_button = document.createElement('div')
   const markasread_button = document.createElement('div')
 
-  from.innerHTML = `<strong> From : </strong> ${email.sender}`;
+  from.innerHTML = `<strong> From : </strong> ${email.sender.replace(/[<>]/g," ")}`;
   to.innerHTML = `<strong> To : </strong> ${email.recipients}`;
   subject.innerHTML = `<strong> Subject : ${email.subject} </strong>`;
   timestamp.innerHTML = `<strong> Timestamp : </strong> ${email.timestamp}`
@@ -148,18 +148,22 @@ function build_email(email, email_id){
 
   reply_button.innerHTML = 'Reply';
   reply_button.classList = "btn btn-outline-primary m-2";
-  reply_button.addEventListener("click", () => compose_reply(email));
+  reply_button.addEventListener("click", () => compose_reply(email, mailbox));
 
-  markasread_button.innerHTML = 'Mark as Read';
-  markasread_button.classList = "btn btn-outline-primary m-2";
-  markasread_button.addEventListener("click", () => {
-    fetch(`/emails/${email_id}`, {
-      method: "PUT",
-      body: JSON.stringify({
-        read: true
-      })
-    });
-  })
+  if(mailbox == "inbox") {
+    markasread_button.innerHTML = 'Mark as Read';
+    markasread_button.classList = "btn btn-outline-primary m-2";
+    markasread_button.addEventListener("click", () => {
+      fetch(`/emails/${email_id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          read: true
+        })
+      });
+      markasread_button.innerHTML = 'Marked as Read';
+      markasread_button.classList = "btn btn-outline-secondary m-2";
+    })
+  }else {}
 
   document.querySelector("#email-view").appendChild(from);
   document.querySelector("#email-view").appendChild(to);
@@ -172,13 +176,19 @@ function build_email(email, email_id){
 }
 
 
-function compose_reply(email){
+function compose_reply(email, mailbox){
   document.querySelector('#emails-view').style.display = 'none';
   document.querySelector('#email-view').style.display = 'none';
   document.querySelector('#compose-view').style.display = 'block';
   document.querySelector('#compose-view').querySelector('h3').innerHTML = "Reply mail";
   // Clear out composition fields
-  document.querySelector('#compose-recipients').value = `${email.sender}`;
+  if(mailbox === 'inbox') {
+    console.log(email.sender)
+    console.log(email.sender.split('<')[1].slice(0, -1))
+    document.querySelector('#compose-recipients').value = `${email.sender.split('<')[1].slice(0, -1)}`;
+  }else{
+    document.querySelector('#compose-recipients').value = `${email.recipients}`;
+  }
   document.querySelector('#compose-subject').value = ((email["subject"].match(/^(Re:)\s/)) ? email["subject"] : "Re: " + email["subject"]);
   document.querySelector('#compose-body').value = `On ${email.timestamp}  ${email.sender} wrote: \n${email.body}\n---------------------------------------------\n`;
 }

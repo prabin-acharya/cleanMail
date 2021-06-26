@@ -28,7 +28,7 @@ def mailbox(request, mailbox):
     else:
         return JsonResponse({"error": "Invalid mailbox."}, status=400)
     #emails = Email.objects.all()
-    emails = emails.order_by("timestamp").all()
+    emails = emails.order_by("-timestamp").all()
     return JsonResponse([email.serialize() for email in emails], safe=False)
 
 @csrf_exempt

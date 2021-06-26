@@ -8,9 +8,10 @@ class Email(models.Model):
 	gmail_id = models.CharField(max_length=32, blank=True)
 	sender = models.EmailField(max_length=254)
 	recipients = models.EmailField(max_length=254)
-	subject = models.CharField(max_length=255)
+	recipients_email = models.EmailField(max_length=254)
+	subject = models.CharField(max_length=255, blank=True)
 	body = models.TextField(blank=True)
-	timestamp = models.DateTimeField(auto_now_add=True)
+	timestamp = models.DateTimeField(blank=True)
 	read = models.BooleanField(default=False)
 
 	def serialize(self):
@@ -19,10 +20,10 @@ class Email(models.Model):
         	"gmail_id": self.gmail_id,
         	"user": self.user,
         	"sender": self.sender,
-        	"recipients": self.recipients,#[user.email for user in self.recipients.all()],
+        	"recipients": self.recipients,#[user.ema
         	"subject": self.subject,
         	"body": self.body,
-        	"timestamp": self.timestamp.strftime("%b %d %Y, %I:%M %p"),
+        	"timestamp": self.timestamp.astimezone().strftime("%b %d %Y, %I:%M %p"),
         	"read": self.read,
     	}
 

@@ -1,14 +1,13 @@
 document.addEventListener('DOMContentLoaded', function() {
 
-  // Use buttons to toggle between views
+  // Buttons to toggle between views
   document.querySelector('#inbox').addEventListener('click', () => load_mailbox('inbox'));
   document.querySelector('#sent').addEventListener('click', () => load_mailbox('sent'));
   document.querySelector('#compose').addEventListener('click', compose_email);
 
-  // Add event listener to the form
+  //event listener to the form
   document.querySelector('#compose-form').addEventListener('submit', send_email);
 
-  // By default, load the inbox
   load_mailbox('inbox');
 });
 
@@ -17,18 +16,25 @@ function send_email(event){
   // Modifies the default beheavor so it doesn't reload the page after submitting.
   event.preventDefault();
 
-  //const from = document.querySelector('input').value;
+  const from = document.querySelector('#compose-sender').value;
   const to = document.querySelector('#compose-recipients').value;
   const subject = document.querySelector('#compose-subject').value;
   const body = document.querySelector('#compose-body').value;
 
   fetch('/emails', {  
     method: 'POST',
+    credentials: "same-origin",
+    headers: {
+      "X-CSRFToken": getCookie("csrftoken"),
+      "Accept": "application/json",
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify({
+      sender : from,
       recipients : to,
       subject : subject,
       body : body
-    }),
+    })
   })
   .then((response) => response.json())
   .then((result) => {
@@ -39,7 +45,6 @@ function send_email(event){
 
 
 function compose_email() {
-  // Show compose view and hide other views
   document.querySelector('#emails-view').style.display = 'none';
   document.querySelector('#email-view').style.display = 'none';
   document.querySelector('#compose-view').style.display = 'block';
@@ -50,11 +55,9 @@ function compose_email() {
 }
   
 function load_mailbox(mailbox) {
-
-  // Show the mailbox and hide other views
   document.querySelector('#emails-view').style.display = 'block';
-  document.querySelector('#compose-view').style.display = 'none';
   document.querySelector('#email-view').style.display = 'none';
+  document.querySelector('#compose-view').style.display = 'none';
 
   // Show the mailbox name
   document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
@@ -71,15 +74,16 @@ function load_mailbox(mailbox) {
   })
   })
   .catch((error)=>console.log(error))
+}
 
 
 function build_emails(email, parent_div, mailbox){
-  const content = document.createElement("div")
-  const recipients = document.createElement("strong")
-  if(mailbox==='inbox'){
-    recipients.innerHTML = ` ${email.sender.split('<')[0]} : `
+  const content = document.createElement("div");
+  const recipients = document.createElement("strong");
+  if(mailbox==='inbox') {
+    recipients.innerHTML = ` ${email.sender.split('<')[0]} : `;
   }else {
-    recipients.innerHTML = ` ${email.recipients} : `
+    recipients.innerHTML = ` ${email.recipients} : `;
   }
   content.appendChild(recipients);
   content.innerHTML += email["subject"];
@@ -90,16 +94,15 @@ function build_emails(email, parent_div, mailbox){
   date.style["font-size"] = '14px';
   date.style.float = "right";
 
-  if(email['read']){
+  if(email['read']) {
     parent_div.className = "text-muted";
     date.className = "text-muted";
-  }else{
+  }else {
     date.style.color = 'black';
   }
   content.appendChild(date);
 
   parent_div.appendChild(content);
-
   parent_div.style.borderStyle = "ridge";
   parent_div.style.borderWidth = "3px";
   parent_div.style['border-radius'] = "6px";
@@ -122,28 +125,22 @@ function read_email(email_id, mailbox){
     build_email(email, email_id, mailbox);
   })
   .catch(error => console.log(error));
-  /*fetch(`/emails/${email_id}`, {
-    method: "PUT",
-    body: JSON.stringify({
-      read: true
-    })
-  });*/
 }
 
 
-function build_email(email, email_id, mailbox){
-  const from = document.createElement('div')
-  const to = document.createElement('div')
-  const subject = document.createElement('div')
-  const timestamp = document.createElement('div')
-  const body = document.createElement('div')
-  const reply_button = document.createElement('div')
-  const markasread_button = document.createElement('div')
+function build_email(email, email_id, mailbox) {
+  const from = document.createElement('div');
+  const to = document.createElement('div');
+  const subject = document.createElement('div');
+  const timestamp = document.createElement('div');
+  const body = document.createElement('div');
+  const reply_button = document.createElement('div');
+  const markasread_button = document.createElement('div');
 
   from.innerHTML = `<strong> From : </strong> ${email.sender.replace(/[<>]/g," ")}`;
   to.innerHTML = `<strong> To : </strong> ${email.recipients}`;
   subject.innerHTML = `<strong> Subject : ${email.subject} </strong>`;
-  timestamp.innerHTML = `<strong> Timestamp : </strong> ${email.timestamp}`
+  timestamp.innerHTML = `<strong> Timestamp : </strong> ${email.timestamp}`;
   body.innerHTML = email.body;
 
   reply_button.innerHTML = 'Reply';
@@ -156,6 +153,12 @@ function build_email(email, email_id, mailbox){
     markasread_button.addEventListener("click", () => {
       fetch(`/emails/${email_id}`, {
         method: "PUT",
+        credentials: "same-origin",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+          "Accept": "application/json",
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           read: true
         })
@@ -185,12 +188,26 @@ function compose_reply(email, mailbox){
   if(mailbox === 'inbox') {
     console.log(email.sender)
     console.log(email.sender.split('<')[1].slice(0, -1))
-    document.querySelector('#compose-recipients').value = `${email.sender.split('<')[1].slice(0, -1)}`;
-  }else{
-    document.querySelector('#compose-recipients').value = `${email.recipients}`;
+    document.querySelector('#compose-recipients').value = `${email.sender_email}`;
+  }else {
+    document.querySelector('#compose-recipients').value = `${email.recipients_email}`;
   }
   document.querySelector('#compose-subject').value = ((email["subject"].match(/^(Re:)\s/)) ? email["subject"] : "Re: " + email["subject"]);
-  document.querySelector('#compose-body').value = `On ${email.timestamp}  ${email.sender} wrote: \n${email.body}\n---------------------------------------------\n`;
+  document.querySelector('#compose-body').value = `On ${email.timestamp}  ${email.sender} wrote: \n${email.body}\n----------------------------------------------------------------\n`;
 }
 
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }

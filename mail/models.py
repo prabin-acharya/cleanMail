@@ -7,8 +7,9 @@ class Email(models.Model):
 	user = models.EmailField(max_length=254, blank=True)
 	gmail_id = models.CharField(max_length=32, blank=True)
 	sender = models.EmailField(max_length=254)
+	sender_email = models.EmailField(max_length=254, blank=True)
 	recipients = models.EmailField(max_length=254)
-	recipients_email = models.EmailField(max_length=254)
+	recipients_email = models.EmailField(max_length=254,blank=True)
 	subject = models.CharField(max_length=255, blank=True)
 	body = models.TextField(blank=True)
 	timestamp = models.DateTimeField(blank=True)
@@ -20,7 +21,9 @@ class Email(models.Model):
         	"gmail_id": self.gmail_id,
         	"user": self.user,
         	"sender": self.sender,
-        	"recipients": self.recipients,#[user.ema
+        	"sender_email": self.sender_email,
+        	"recipients": self.recipients,
+        	"recipients_email": self.recipients_email,
         	"subject": self.subject,
         	"body": self.body,
         	"timestamp": self.timestamp.astimezone().strftime("%b %d %Y, %I:%M %p"),

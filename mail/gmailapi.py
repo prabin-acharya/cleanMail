@@ -7,7 +7,6 @@ from google.oauth2.credentials import Credentials
 import time
 
 from email.mime.text import MIMEText
-#from email import errors
 
 from .models import Email
 
@@ -16,6 +15,7 @@ import email
 import json
 import datetime
 import pytz
+import re
 
 
 # If modifying these scopes, delete the file token.json.
@@ -109,13 +109,19 @@ def save_mail(message):
     for i in headers:
         if i["name"] == "From" or i["name"] == "from":
             sender = i["value"]
-            #sender = json.dumps(sender[0])
-            #sender = sender.strip('\"')
+            sender_email = re.search('<(.+)>', sender)
+            if sender_email:
+                sender_email = sender_email.group(1)
+            else:
+                sender_email = sender
 
         elif i["name"] == "To" or i["name"] == "to":
             recipients = i["value"]
-            #recipients = json.dumps(recipients[0])
-            #recipients = recipients.strip('\"')
+            recipients_email = re.search('<(.+)>', recipients)
+            if recipients_email:
+                recipients_email = recipients_email.group(1)
+            else:
+                recipients_email = recipients
 
         elif i["name"] == "Subject" or i["name"] == "subject":
             subject = i["value"]
@@ -126,7 +132,7 @@ def save_mail(message):
             date = i["value"]
             try:
                 date = datetime.datetime.strptime(date, '%a, %d %b %Y %X %Z')
-            except ValueError:
+            except:
                 try:
                     date = datetime.datetime.strptime(date, '%a, %d %b %Y %X %z')
                 except:
@@ -143,7 +149,9 @@ def save_mail(message):
         user = user,
         gmail_id = gmail_id,
         sender = sender,
+        sender_email = sender_email,
         recipients = recipients,
+        recipients_email = recipients_email,
         subject = subject,
         body = body,
         timestamp = date

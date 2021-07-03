@@ -125,8 +125,6 @@ def save_mail(message):
 
         elif i["name"] == "Subject" or i["name"] == "subject":
             subject = i["value"]
-            print(subject)
-            #subject = json.dumps(subject[0])
 
         elif i["name"] == "Date" or i["name"] == "date":
             date = i["value"]
@@ -140,7 +138,6 @@ def save_mail(message):
                         date = datetime.datetime.strptime(date, '%a, %d %b %Y %X %z (%Z)')
                     except:
                         date = date[:-6].strip()
-                        print(date)
                         date = datetime.datetime.strptime(date, '%a, %d %b %Y %X %z')
 
     body = readMessage(mail)

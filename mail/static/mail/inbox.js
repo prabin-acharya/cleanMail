@@ -186,8 +186,6 @@ function compose_reply(email, mailbox){
   document.querySelector('#compose-view').querySelector('h3').innerHTML = "Reply mail";
   // Clear out composition fields
   if(mailbox === 'inbox') {
-    console.log(email.sender)
-    console.log(email.sender.split('<')[1].slice(0, -1))
     document.querySelector('#compose-recipients').value = `${email.sender_email}`;
   }else {
     document.querySelector('#compose-recipients').value = `${email.recipients_email}`;

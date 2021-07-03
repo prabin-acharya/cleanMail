@@ -4,15 +4,15 @@ from django.db import models
 
 
 class Email(models.Model):
-	user = models.EmailField(max_length=254, blank=True)
-	gmail_id = models.CharField(max_length=32, blank=True)
+	user = models.EmailField(max_length=254)
+	gmail_id = models.CharField(max_length=32)
 	sender = models.EmailField(max_length=254)
-	sender_email = models.EmailField(max_length=254, blank=True)
+	sender_email = models.EmailField(max_length=254)
 	recipients = models.EmailField(max_length=254)
-	recipients_email = models.EmailField(max_length=254,blank=True)
-	subject = models.CharField(max_length=255, blank=True)
-	body = models.TextField(blank=True)
-	timestamp = models.DateTimeField(blank=True)
+	recipients_email = models.EmailField(max_length=254)
+	subject = models.CharField(max_length=255)
+	body = models.TextField()
+	timestamp = models.DateTimeField()
 	read = models.BooleanField(default=False)
 
 	def serialize(self):
